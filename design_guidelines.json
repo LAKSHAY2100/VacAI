@@ -1,0 +1,120 @@
+{
+  "theme": "light",
+  "archetype": "Organic & Earthy (1) with High-End Editorial Elegance",
+  "brand_identity": {
+    "vibe": "intelligent trip design, elegance, trust, discovery, calm luxury",
+    "anti_patterns": ["loud tech", "generic startup gradients", "purple AI aesthetics", "generic SaaS dashboard feel"]
+  },
+  "colors": {
+    "background": {
+      "primary": "#FAF9F6",
+      "secondary": "#F0EFEB",
+      "tertiary": "#E6E4DF"
+    },
+    "text": {
+      "primary": "#1C1B1A",
+      "secondary": "#4A4846",
+      "muted": "#7A7671"
+    },
+    "accent": {
+      "primary": "#D36B4A",
+      "hover": "#BE5E3E",
+      "light": "#F4DCD5",
+      "subtle": "#F9EAE5"
+    },
+    "sand": {
+      "base": "#D9C5B2",
+      "light": "#EBE6E0"
+    },
+    "border": {
+      "default": "#E6E4DF",
+      "light": "#F0EFEB"
+    }
+  },
+  "typography": {
+    "heading_font": "Cormorant Garamond",
+    "body_font": "Outfit",
+    "ui_font": "Outfit",
+    "google_fonts_url": "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600&display=swap",
+    "scale": {
+      "h1": "font-serif text-5xl md:text-6xl lg:text-7xl tracking-tighter leading-none font-medium text-[#1C1B1A]",
+      "h2": "font-serif text-4xl md:text-5xl tracking-tight leading-tight font-medium text-[#1C1B1A]",
+      "h3": "font-serif text-2xl md:text-3xl tracking-tight leading-snug font-medium text-[#1C1B1A]",
+      "h4": "font-sans text-xl font-medium tracking-tight text-[#1C1B1A]",
+      "body": "font-sans text-base md:text-lg leading-relaxed text-[#4A4846] font-light",
+      "label": "font-sans text-xs uppercase tracking-[0.2em] font-medium text-[#7A7671]"
+    }
+  },
+  "layout": {
+    "spacing": "Generous and breathable. Use Tailwind classes like p-8, p-12, p-16, gap-12.",
+    "border_radius": {
+      "cards": "rounded-3xl",
+      "buttons": "rounded-full",
+      "inputs": "rounded-2xl"
+    },
+    "shadows": {
+      "card_default": "shadow-[0_8px_30px_rgb(28,27,26,0.03)]",
+      "card_hover": "shadow-[0_20px_40px_rgb(28,27,26,0.08)]",
+      "button_hover": "shadow-[0_8px_20px_rgb(211,107,74,0.2)]",
+      "image_frame": "shadow-[0_4px_20px_rgb(0,0,0,0.08)]"
+    }
+  },
+  "components": {
+    "hero": {
+      "style": "Immersive editorial layout. Massive Serif H1, subtle background texture, and floating 'Example Trip' bento cards overlapping the bottom edge of the hero to invite scrolling.",
+      "background": "Use the sand texture background with a soft radial gradient overlay of sand (#D9C5B2) and pale terracotta (#F4DCD5) at 20% opacity. Add CSS noise/grain if possible."
+    },
+    "cards": {
+      "style": "Large border-radius (3xl), 1px solid border (#E6E4DF), white background (#FFFFFF) or off-white (#FAF9F6). Internal padding must be generous (p-8 minimum).",
+      "image_treatment": "Images inside cards must have an inner 4px white or off-white border to look like framed editorial art/photos."
+    },
+    "inputs": {
+      "style": "Tall inputs (h-14), rounded-2xl, background #FFFFFF, border #E6E4DF, focus:ring-2 focus:ring-[#D36B4A]/30 focus:border-[#D36B4A] transition-all duration-300."
+    },
+    "buttons": {
+      "primary": "bg-[#D36B4A] text-white rounded-full px-8 py-4 font-medium hover:-translate-y-1 hover:shadow-[0_8px_20px_rgb(211,107,74,0.2)] transition-all duration-300",
+      "secondary": "bg-[#F0EFEB] text-[#1C1B1A] rounded-full px-8 py-4 font-medium hover:bg-[#E6E4DF] transition-all duration-300"
+    },
+    "markdown_results": {
+      "style": "Styled like a high-end travel brief. Serif headings for days/locations. Left border accent in terracotta (#D36B4A) for key highlights/tips. Generous line height. Do not use generic standard markdown styling.",
+      "loader": "Elegant cycling text animation ('Curating destinations...', 'Consulting local guides...', 'Finalizing your itinerary...') over a soft glowing background. Do not use a spinner."
+    }
+  },
+  "motion": {
+    "entrances": "Staggered fade-up (y: 20, opacity: 0 -> 1) over 0.6s with ease-out cubic-bezier.",
+    "hover": "Transform transition-transform duration-300 ease-out.",
+    "page_load": "Smooth opacity reveal."
+  },
+  "media": {
+    "hero_background": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/83578421-41c8-4bad-b2f4-e2e33b124e54/images/6ced2b76211b91f7f2b3cb8513e3cc7c97c386f547f3726311d1596ef4b9b037.png",
+      "description": "Abstract subtle sand dune texture, light warm ivory and beige colors for global background"
+    },
+    "hero_image": {
+      "url": "https://static.prod-images.emergentagent.com/jobs/83578421-41c8-4bad-b2f4-e2e33b124e54/images/c78914d355229f3c4b7625e1ed1dca0854e1c774082d7563595acc92382d2336.png",
+      "description": "Mediterranean villa at sunset for main hero visual"
+    },
+    "sample_trip_1": {
+      "url": "https://images.unsplash.com/photo-1631812314418-d2c27f4d85ee?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDJ8MHwxfHNlYXJjaHwxfHxhbWFsZmklMjBjb2FzdCUyMHN1bnNldHxlbnwwfHx8fDE3NzcxODkxODJ8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Amalfi Coast - Use for Sample Trip Card 1"
+    },
+    "sample_trip_2": {
+      "url": "https://images.unsplash.com/photo-1727836674703-7d3d26af17c3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2OTF8MHwxfHNlYXJjaHwxfHxreW90byUyMGF1dHVtbnxlbnwwfHx8fDE3NzcxODkxODJ8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Kyoto Autumn Temple - Use for Sample Trip Card 2"
+    },
+    "sample_trip_3": {
+      "url": "https://images.unsplash.com/photo-1683138158840-b9988d9fe42e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2MzR8MHwxfHNlYXJjaHwyfHxzYWhhcmElMjBkZXNlcnQlMjBkdW5lc3xlbnwwfHx8fDE3NzcxODkxODJ8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Sahara desert dunes - Use for Sample Trip Card 3"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Inject the google fonts in the main HTML file: Cormorant Garamond and Outfit.",
+    "Extend Tailwind configuration with the custom colors defined in this file. Add font-serif for Cormorant Garamond and font-sans for Outfit.",
+    "Use pure HTML+Tailwind for the layout structure. Use Shadcn components strictly for logic (Form, Input, DatePicker, Textarea). heavily customize Shadcn default styles to match the border-radius and colors here.",
+    "Make sure all interactive elements (buttons, inputs) and key informational elements have 'data-testid' attributes (e.g., data-testid='submit-trip-btn').",
+    "Do NOT use 'Inter' anywhere. The vibe must remain extremely editorial, like a high-end physical travel magazine.",
+    "Implement the Mock backend for POST /api/v1/plan-trip to return a nicely formatted markdown itinerary.",
+    "In the results panel, apply Tailwind Typography (prose) customized to match the editorial styling (Serif headings, sans body).",
+    "Instead of a standard spinner during generation, create a sophisticated loading state that cycles text as specified."
+  ]
+}
