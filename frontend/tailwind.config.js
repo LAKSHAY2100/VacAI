@@ -1,82 +1,187 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
     darkMode: ["class"],
-    content: [
-    "./src/**/*.{js,jsx,ts,tsx}",
-    "./public/index.html"
-  ],
-  theme: {
-  	extend: {
-  		borderRadius: {
-  			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
-  		},
-  		colors: {
-  			background: 'hsl(var(--background))',
-  			foreground: 'hsl(var(--foreground))',
-  			card: {
-  				DEFAULT: 'hsl(var(--card))',
-  				foreground: 'hsl(var(--card-foreground))'
-  			},
-  			popover: {
-  				DEFAULT: 'hsl(var(--popover))',
-  				foreground: 'hsl(var(--popover-foreground))'
-  			},
-  			primary: {
-  				DEFAULT: 'hsl(var(--primary))',
-  				foreground: 'hsl(var(--primary-foreground))'
-  			},
-  			secondary: {
-  				DEFAULT: 'hsl(var(--secondary))',
-  				foreground: 'hsl(var(--secondary-foreground))'
-  			},
-  			muted: {
-  				DEFAULT: 'hsl(var(--muted))',
-  				foreground: 'hsl(var(--muted-foreground))'
-  			},
-  			accent: {
-  				DEFAULT: 'hsl(var(--accent))',
-  				foreground: 'hsl(var(--accent-foreground))'
-  			},
-  			destructive: {
-  				DEFAULT: 'hsl(var(--destructive))',
-  				foreground: 'hsl(var(--destructive-foreground))'
-  			},
-  			border: 'hsl(var(--border))',
-  			input: 'hsl(var(--input))',
-  			ring: 'hsl(var(--ring))',
-  			chart: {
-  				'1': 'hsl(var(--chart-1))',
-  				'2': 'hsl(var(--chart-2))',
-  				'3': 'hsl(var(--chart-3))',
-  				'4': 'hsl(var(--chart-4))',
-  				'5': 'hsl(var(--chart-5))'
-  			}
-  		},
-  		keyframes: {
-  			'accordion-down': {
-  				from: {
-  					height: '0'
-  				},
-  				to: {
-  					height: 'var(--radix-accordion-content-height)'
-  				}
-  			},
-  			'accordion-up': {
-  				from: {
-  					height: 'var(--radix-accordion-content-height)'
-  				},
-  				to: {
-  					height: '0'
-  				}
-  			}
-  		},
-  		animation: {
-  			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
-  		}
-  	}
-  },
-  plugins: [require("tailwindcss-animate")],
+    content: ["./src/**/*.{js,jsx,ts,tsx}", "./public/index.html"],
+    theme: {
+        extend: {
+            fontFamily: {
+                serif: ['"Cormorant Garamond"', 'ui-serif', 'Georgia', 'serif'],
+                sans: ['Outfit', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                display: ['"Cormorant Garamond"', 'ui-serif', 'Georgia', 'serif'],
+            },
+            colors: {
+                background: 'hsl(var(--background))',
+                foreground: 'hsl(var(--foreground))',
+                card: {
+                    DEFAULT: 'hsl(var(--card))',
+                    foreground: 'hsl(var(--card-foreground))',
+                },
+                popover: {
+                    DEFAULT: 'hsl(var(--popover))',
+                    foreground: 'hsl(var(--popover-foreground))',
+                },
+                primary: {
+                    DEFAULT: 'hsl(var(--primary))',
+                    foreground: 'hsl(var(--primary-foreground))',
+                },
+                secondary: {
+                    DEFAULT: 'hsl(var(--secondary))',
+                    foreground: 'hsl(var(--secondary-foreground))',
+                },
+                muted: {
+                    DEFAULT: 'hsl(var(--muted))',
+                    foreground: 'hsl(var(--muted-foreground))',
+                },
+                accent: {
+                    DEFAULT: 'hsl(var(--accent))',
+                    foreground: 'hsl(var(--accent-foreground))',
+                },
+                destructive: {
+                    DEFAULT: 'hsl(var(--destructive))',
+                    foreground: 'hsl(var(--destructive-foreground))',
+                },
+                border: 'hsl(var(--border))',
+                input: 'hsl(var(--input))',
+                ring: 'hsl(var(--ring))',
+                ivory: {
+                    50: '#FDFCF9',
+                    100: '#FAF9F6',
+                    200: '#F0EFEB',
+                    300: '#E6E4DF',
+                    400: '#D9C5B2',
+                    500: '#EBE6E0',
+                },
+                ink: {
+                    900: '#1C1B1A',
+                    700: '#4A4846',
+                    500: '#7A7671',
+                    400: '#9C9892',
+                },
+                terracotta: {
+                    50: '#F9EAE5',
+                    100: '#F4DCD5',
+                    200: '#E9B9A8',
+                    400: '#DC8769',
+                    500: '#D36B4A',
+                    600: '#BE5E3E',
+                    700: '#9C4A30',
+                },
+            },
+            borderRadius: {
+                lg: 'var(--radius)',
+                md: 'calc(var(--radius) - 2px)',
+                sm: 'calc(var(--radius) - 4px)',
+                '4xl': '2rem',
+                '5xl': '2.5rem',
+            },
+            boxShadow: {
+                'soft': '0 8px 30px rgb(28,27,26,0.03)',
+                'soft-lg': '0 20px 40px rgb(28,27,26,0.08)',
+                'frame': '0 4px 20px rgb(0,0,0,0.08)',
+                'glow-terracotta': '0 8px 20px rgb(211,107,74,0.20)',
+            },
+            keyframes: {
+                'accordion-down': {
+                    from: { height: '0' },
+                    to: { height: 'var(--radix-accordion-content-height)' },
+                },
+                'accordion-up': {
+                    from: { height: 'var(--radix-accordion-content-height)' },
+                    to: { height: '0' },
+                },
+                'fade-up': {
+                    '0%': { opacity: '0', transform: 'translateY(20px)' },
+                    '100%': { opacity: '1', transform: 'translateY(0)' },
+                },
+                'shimmer': {
+                    '0%': { backgroundPosition: '-700px 0' },
+                    '100%': { backgroundPosition: '700px 0' },
+                },
+                'float-slow': {
+                    '0%, 100%': { transform: 'translateY(0px)' },
+                    '50%': { transform: 'translateY(-12px)' },
+                },
+            },
+            animation: {
+                'accordion-down': 'accordion-down 0.2s ease-out',
+                'accordion-up': 'accordion-up 0.2s ease-out',
+                'fade-up': 'fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both',
+                'shimmer': 'shimmer 2.4s linear infinite',
+                'float-slow': 'float-slow 7s ease-in-out infinite',
+            },
+            typography: ({ theme }) => ({
+                editorial: {
+                    css: {
+                        '--tw-prose-body': '#4A4846',
+                        '--tw-prose-headings': '#1C1B1A',
+                        '--tw-prose-links': '#D36B4A',
+                        '--tw-prose-bold': '#1C1B1A',
+                        '--tw-prose-quotes': '#1C1B1A',
+                        '--tw-prose-quote-borders': '#D36B4A',
+                        '--tw-prose-bullets': '#D36B4A',
+                        '--tw-prose-hr': '#E6E4DF',
+                        fontFamily: 'Outfit, ui-sans-serif, system-ui, sans-serif',
+                        fontWeight: '300',
+                        fontSize: '1.0625rem',
+                        lineHeight: '1.85',
+                        h1: {
+                            fontFamily: '"Cormorant Garamond", ui-serif, Georgia, serif',
+                            fontWeight: '500',
+                            letterSpacing: '-0.02em',
+                            fontSize: '2.75rem',
+                            lineHeight: '1.05',
+                            marginTop: '0',
+                            marginBottom: '0.5em',
+                        },
+                        h2: {
+                            fontFamily: '"Cormorant Garamond", ui-serif, Georgia, serif',
+                            fontWeight: '500',
+                            letterSpacing: '-0.015em',
+                            fontSize: '2rem',
+                            lineHeight: '1.15',
+                            marginTop: '1.6em',
+                            marginBottom: '0.6em',
+                        },
+                        h3: {
+                            fontFamily: '"Cormorant Garamond", ui-serif, Georgia, serif',
+                            fontWeight: '500',
+                            letterSpacing: '-0.01em',
+                            fontSize: '1.55rem',
+                            lineHeight: '1.25',
+                            marginTop: '1.4em',
+                            marginBottom: '0.4em',
+                        },
+                        p: { marginTop: '0.85em', marginBottom: '0.85em' },
+                        blockquote: {
+                            fontFamily: '"Cormorant Garamond", ui-serif, Georgia, serif',
+                            fontStyle: 'italic',
+                            fontWeight: '400',
+                            fontSize: '1.5rem',
+                            lineHeight: '1.4',
+                            color: '#1C1B1A',
+                            borderLeftWidth: '2px',
+                            borderLeftColor: '#D36B4A',
+                            paddingLeft: '1.25em',
+                            marginTop: '1.4em',
+                            marginBottom: '1.4em',
+                        },
+                        'ul > li::marker': { color: '#D36B4A' },
+                        'ol > li::marker': { color: '#D36B4A', fontWeight: '500' },
+                        hr: {
+                            borderColor: '#E6E4DF',
+                            marginTop: '2.5em',
+                            marginBottom: '2.5em',
+                        },
+                        a: {
+                            textDecoration: 'none',
+                            borderBottom: '1px solid #D36B4A',
+                            fontWeight: '400',
+                        },
+                        strong: { color: '#1C1B1A', fontWeight: '500' },
+                    },
+                },
+            }),
+        },
+    },
+    plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
 };
