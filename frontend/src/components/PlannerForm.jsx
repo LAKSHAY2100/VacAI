@@ -44,12 +44,15 @@ const DateButton = forwardRef(function DateButton(
 });
 
 export const PlannerForm = ({ initialValues, onSubmit, isLoading }) => {
+  const maptilerApiKey = process.env.REACT_APP_MAPTILER_API_KEY || "";
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [startDate, setStartDate] = useState(undefined);
   const [endDate, setEndDate] = useState(undefined);
   const [interests, setInterests] = useState("");
   const [errors, setErrors] = useState({});
+  const [originSuggestions, setOriginSuggestions] = useState([]);
+  const [destinationSuggestions, setDestinationSuggestions] = useState([]);
 
   useEffect(() => {
     if (!initialValues) return;
@@ -61,6 +64,70 @@ export const PlannerForm = ({ initialValues, onSubmit, isLoading }) => {
     if (initialValues.startDate) setStartDate(initialValues.startDate);
     if (initialValues.endDate) setEndDate(initialValues.endDate);
   }, [initialValues]);
+
+  useEffect(() => {
+    if (!maptilerApiKey || origin.trim().length < 2) {
+      setOriginSuggestions([]);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(async () => {
+      try {
+        const endpoint = `https://api.maptiler.com/geocoding/${encodeURIComponent(
+          origin.trim()
+        )}.json?key=${maptilerApiKey}&autocomplete=true&limit=5&language=en`;
+        const response = await fetch(endpoint, { signal: controller.signal });
+        if (!response.ok) return;
+        const data = await response.json();
+        const suggestions = (data?.features || [])
+          .map((feature) => feature.place_name || feature.text || "")
+          .filter(Boolean);
+        setOriginSuggestions(suggestions);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setOriginSuggestions([]);
+        }
+      }
+    }, 250);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
+  }, [origin, maptilerApiKey]);
+
+  useEffect(() => {
+    if (!maptilerApiKey || destination.trim().length < 2) {
+      setDestinationSuggestions([]);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(async () => {
+      try {
+        const endpoint = `https://api.maptiler.com/geocoding/${encodeURIComponent(
+          destination.trim()
+        )}.json?key=${maptilerApiKey}&autocomplete=true&limit=5&language=en`;
+        const response = await fetch(endpoint, { signal: controller.signal });
+        if (!response.ok) return;
+        const data = await response.json();
+        const suggestions = (data?.features || [])
+          .map((feature) => feature.place_name || feature.text || "")
+          .filter(Boolean);
+        setDestinationSuggestions(suggestions);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setDestinationSuggestions([]);
+        }
+      }
+    }, 250);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
+  }, [destination, maptilerApiKey]);
 
   const validate = () => {
     const e = {};
@@ -148,6 +215,7 @@ export const PlannerForm = ({ initialValues, onSubmit, isLoading }) => {
                 <input
                   data-testid="input-origin"
                   type="text"
+                  list="origin-location-suggestions"
                   value={origin}
                   onChange={(e) => setOrigin(e.target.value)}
                   placeholder="Bangalore, India"
@@ -157,6 +225,20 @@ export const PlannerForm = ({ initialValues, onSubmit, isLoading }) => {
                   )}
                   autoComplete="off"
                 />
+                <datalist id="origin-location-suggestions">
+                  {originSuggestions.map((item) => (
+                    <option key={item} value={item} />
+                  ))}
+                </datalist>
+                {maptilerApiKey ? (
+                  <span className="text-[11px] text-[#9C9892]">
+                    Search with MapTiler location suggestions.
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-[#9C9892]">
+                    Add `REACT_APP_MAPTILER_API_KEY` in `.env` to enable map suggestions.
+                  </span>
+                )}
                 {errors.origin ? (
                   <span data-testid="error-origin" className="text-xs text-[#BE5E3E]">
                     {errors.origin}
@@ -168,6 +250,7 @@ export const PlannerForm = ({ initialValues, onSubmit, isLoading }) => {
                 <input
                   data-testid="input-destination"
                   type="text"
+                  list="destination-location-suggestions"
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
                   placeholder="Krabi, Thailand"
@@ -178,6 +261,20 @@ export const PlannerForm = ({ initialValues, onSubmit, isLoading }) => {
                   )}
                   autoComplete="off"
                 />
+                <datalist id="destination-location-suggestions">
+                  {destinationSuggestions.map((item) => (
+                    <option key={item} value={item} />
+                  ))}
+                </datalist>
+                {maptilerApiKey ? (
+                  <span className="text-[11px] text-[#9C9892]">
+                    Search with MapTiler location suggestions.
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-[#9C9892]">
+                    Add `REACT_APP_MAPTILER_API_KEY` in `.env` to enable map suggestions.
+                  </span>
+                )}
                 {errors.destination ? (
                   <span data-testid="error-destination" className="text-xs text-[#BE5E3E]">
                     {errors.destination}

@@ -15,7 +15,7 @@ import Footer from "./components/Footer";
 import { Toaster } from "./components/ui/sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const API = `${BACKEND_URL}api`;
 
 const App = () => {
   const [status, setStatus] = useState("idle"); // idle | loading | success | error
