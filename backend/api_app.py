@@ -93,7 +93,7 @@ class TripCrew:
         self.date_range = date_range
         self.llm = LLM(model=model_name)
 
-    def run(self):
+    async def run(self):
         try:
             agents = TripAgents(llm=self.llm)
             tasks = TripTasks()
@@ -132,7 +132,7 @@ class TripCrew:
                 verbose=True
             )
 
-            result = crew.kickoff()
+            result = await crew.kickoff_async()
             # Convert CrewOutput to string and ensure it's properly formatted
             return result.raw if hasattr(result, 'raw') else str(result)
         except Exception as x:
@@ -173,7 +173,7 @@ async def plan_trip(
             f"openai/{settings.OPENAI_MODEL}",
         )
         
-        itinerary = trip_crew.run()
+        itinerary = await trip_crew.run()
         
         # Ensure itinerary is a string
         if not isinstance(itinerary, str):
