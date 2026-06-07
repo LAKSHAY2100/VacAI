@@ -1,7 +1,6 @@
 from crewai import Task
 from textwrap import dedent
 from datetime import date
-import streamlit as st
 
 class TripTasks():
     def __validate_inputs(self, origin, cities, interests, date_range):

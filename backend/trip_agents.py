@@ -1,7 +1,6 @@
 
 from crewai import Agent
 import re
-import streamlit as st
 from langchain_core.language_models.chat_models import BaseChatModel
 from crewai import LLM
 from tools.browser_tools import BrowserTools
@@ -87,7 +86,7 @@ class StreamToExpander:
             task_value = task_match_input.group(1).strip()
 
         if task_value:
-            st.toast(":robot_face: " + task_value)
+            print(f"[Agent] {task_value}")
 
         # Check if the text contains the specified phrase and apply color
         if "Entering new CrewAgentExecutor chain" in cleaned_data:
