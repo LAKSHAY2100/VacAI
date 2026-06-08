@@ -1,10 +1,30 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Download, RotateCcw, Sparkles } from "lucide-react";
+import { Download, RotateCcw, Sparkles, Send, Loader2, User, Bot } from "lucide-react";
 
-export const ResultsPanel = ({ itinerary, meta, onReset }) => {
+export const ResultsPanel = ({ itinerary, meta, chatMessages = [], isRefining = false, onRefine, onReset }) => {
+  const [input, setInput] = useState("");
+  const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, isRefining]);
+
+  const handleSend = () => {
+    const trimmed = input.trim();
+    if (!trimmed || isRefining) return;
+    setInput("");
+    onRefine?.(trimmed);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
   const handleDownload = () => {
     const blob = new Blob([itinerary], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -101,6 +121,86 @@ export const ResultsPanel = ({ itinerary, meta, onReset }) => {
             <p className="mt-6 text-xs uppercase tracking-[0.22em] text-[#7A7671]">
               Composed by VacAIgent · Adjust freely · Bookings sold separately
             </p>
+          </div>
+
+          {/* Chat refinement section */}
+          <div className="border-t border-[#F0EFEB] px-8 sm:px-12 lg:px-16 py-8">
+            <h3 className="uppercase-eyebrow text-[#7A7671] mb-4 flex items-center gap-2 text-xs tracking-[0.18em]">
+              <Bot className="w-3.5 h-3.5 text-[#D36B4A]" strokeWidth={1.6} />
+              Refine your plan
+            </h3>
+
+            {/* Chat messages */}
+            {chatMessages.length > 0 && (
+              <div className="mb-4 max-h-64 overflow-y-auto space-y-3 pr-1">
+                {chatMessages.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`flex items-start gap-2.5 ${
+                      msg.role === "user" ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    {msg.role === "assistant" && (
+                      <span className="mt-0.5 flex-shrink-0 w-6 h-6 rounded-full bg-[#FDF0EB] flex items-center justify-center">
+                        <Bot className="w-3.5 h-3.5 text-[#D36B4A]" strokeWidth={1.6} />
+                      </span>
+                    )}
+                    <div
+                      className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed max-w-[80%] ${
+                        msg.role === "user"
+                          ? "bg-[#1C1B1A] text-white"
+                          : "bg-[#F5F4F1] text-[#1C1B1A]"
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                    {msg.role === "user" && (
+                      <span className="mt-0.5 flex-shrink-0 w-6 h-6 rounded-full bg-[#1C1B1A] flex items-center justify-center">
+                        <User className="w-3.5 h-3.5 text-white" strokeWidth={1.6} />
+                      </span>
+                    )}
+                  </div>
+                ))}
+                {isRefining && (
+                  <div className="flex items-start gap-2.5 justify-start">
+                    <span className="mt-0.5 flex-shrink-0 w-6 h-6 rounded-full bg-[#FDF0EB] flex items-center justify-center">
+                      <Bot className="w-3.5 h-3.5 text-[#D36B4A]" strokeWidth={1.6} />
+                    </span>
+                    <div className="rounded-2xl px-4 py-2.5 text-sm bg-[#F5F4F1] text-[#7A7671] flex items-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={1.6} />
+                      Refining your itinerary…
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+            )}
+
+            {/* Input bar */}
+            <div className="flex items-center gap-3">
+              <input
+                data-testid="refine-input"
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={isRefining}
+                placeholder="e.g. Make day 3 more adventurous, add budget restaurants…"
+                className="flex-1 input-premium text-sm disabled:opacity-50"
+              />
+              <button
+                data-testid="refine-send"
+                onClick={handleSend}
+                disabled={!input.trim() || isRefining}
+                className="flex-shrink-0 w-10 h-10 rounded-xl bg-[#1C1B1A] text-white flex items-center justify-center transition-opacity disabled:opacity-30 hover:opacity-80"
+              >
+                {isRefining ? (
+                  <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.6} />
+                ) : (
+                  <Send className="w-4 h-4" strokeWidth={1.6} />
+                )}
+              </button>
+            </div>
           </div>
         </motion.div>
       </div>

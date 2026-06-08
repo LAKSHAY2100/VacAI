@@ -23,6 +23,9 @@ const App = () => {
   const [meta, setMeta] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [initialValues, setInitialValues] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [isRefining, setIsRefining] = useState(false);
+  const [tripId, setTripId] = useState(null);
 
   const plannerRef = useRef(null);
   const resultsRef = useRef(null);
@@ -45,6 +48,9 @@ const App = () => {
     });
     setStatus("idle");
     setItinerary("");
+    setChatMessages([]);
+    setTripId(null);
+    window.history.replaceState(null, "", window.location.pathname);
     setTimeout(() => scrollTo("planner"), 80);
   };
 
@@ -52,6 +58,8 @@ const App = () => {
     setStatus("loading");
     setErrorMessage("");
     setItinerary("");
+    setChatMessages([]);
+    setTripId(null);
     setMeta({
       origin: payload.origin,
       destination: payload.destination,
@@ -69,6 +77,10 @@ const App = () => {
       if (data.status === "success" && data.itinerary) {
         setItinerary(data.itinerary);
         setStatus("success");
+        if (data.trip_id) {
+          setTripId(data.trip_id);
+          window.history.replaceState(null, "", `#/trip/${data.trip_id}`);
+        }
         setTimeout(() => scrollTo("results"), 80);
       } else {
         setErrorMessage(data.error || data.message || "Unable to compose your itinerary.");
@@ -84,6 +96,86 @@ const App = () => {
       setStatus("error");
     }
   };
+
+  const handleRefine = async (message) => {
+    if (!meta || !itinerary || isRefining) return;
+    setIsRefining(true);
+    setChatMessages((prev) => [...prev, { role: "user", content: message }]);
+    try {
+      const res = await axios.post(
+        `${API}/v1/refine-trip`,
+        {
+          origin: meta.origin,
+          destination: meta.destination,
+          start_date: meta.start_date,
+          end_date: meta.end_date,
+          interests: meta.interests || "",
+          previous_itinerary: itinerary,
+          refinement_request: message,
+          trip_id: tripId || undefined,
+        },
+        { headers: { "Content-Type": "application/json" } }
+      );
+      const data = res.data;
+      if (data.status === "success" && data.itinerary) {
+        setItinerary(data.itinerary);
+        if (data.trip_id) setTripId(data.trip_id);
+        setChatMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "Itinerary updated with your changes." },
+        ]);
+      } else {
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: `Could not refine: ${data.error || data.message || "Unknown error"}`,
+          },
+        ]);
+      }
+    } catch (e) {
+      const detail =
+        e?.response?.data?.detail ||
+        e?.response?.data?.error ||
+        e?.message ||
+        "Something went wrong.";
+      setChatMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: `Error: ${typeof detail === "string" ? detail : "Unable to refine."}` },
+      ]);
+    } finally {
+      setIsRefining(false);
+    }
+  };
+
+  // Load trip from URL hash on mount
+  useEffect(() => {
+    const loadTripFromHash = async () => {
+      const hash = window.location.hash;
+      const match = hash.match(/^#\/trip\/([a-f0-9]{24})$/);
+      if (!match) return;
+      const id = match[1];
+      try {
+        const res = await axios.get(`${API}/v1/trips/${id}`);
+        const t = res.data;
+        setTripId(t.trip_id);
+        setItinerary(t.itinerary);
+        setMeta({
+          origin: t.origin,
+          destination: t.destination,
+          start_date: t.start_date,
+          end_date: t.end_date,
+          interests: t.interests,
+        });
+        setChatMessages(t.refinements || []);
+        setStatus("success");
+        setTimeout(() => scrollTo("results"), 200);
+      } catch {
+        // Trip not found — stay on landing page
+      }
+    };
+    loadTripFromHash();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // Lightweight ping (kept from template)
@@ -120,10 +212,16 @@ const App = () => {
             <ResultsPanel
               itinerary={itinerary}
               meta={meta}
+              chatMessages={chatMessages}
+              isRefining={isRefining}
+              onRefine={handleRefine}
               onReset={() => {
                 setStatus("idle");
                 setItinerary("");
                 setMeta(null);
+                setChatMessages([]);
+                setTripId(null);
+                window.history.replaceState(null, "", window.location.pathname);
                 scrollTo("planner");
               }}
             />
