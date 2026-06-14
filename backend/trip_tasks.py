@@ -86,5 +86,33 @@ class TripTasks():
             expected_output="A complete 7-day travel plan, formatted as markdown, with a daily schedule and budget.",
             agent=agent)
 
+    def refine_task(self, agent, origin, interests, date_range, previous_itinerary, refinement_request):
+        return Task(description=dedent(f"""
+            You have previously created a travel itinerary. The traveler has
+            reviewed it and is requesting specific changes.
+
+            PREVIOUS ITINERARY:
+            {previous_itinerary}
+
+            TRAVELER'S CHANGE REQUEST:
+            {refinement_request}
+
+            Your job is to modify the existing itinerary based on the
+            traveler's feedback. Keep everything the traveler didn't
+            mention unchanged. Only adjust the parts they asked about.
+
+            You MUST return the COMPLETE updated itinerary as markdown,
+            not just the changed parts. Include the full day-by-day plan,
+            budget breakdown, and packing suggestions — updated to reflect
+            the requested changes.
+            {self.__tip_section()}
+
+            Trip Date: {date_range}
+            Traveling from: {origin}
+            Traveler Interests: {interests}
+          """),
+            expected_output="A complete updated travel plan as markdown, reflecting the traveler's requested changes.",
+            agent=agent)
+
     def __tip_section(self):
         return "If you do your BEST WORK, I'll tip you $100 and grant you any wish you want!"
