@@ -114,5 +114,54 @@ class TripTasks():
             expected_output="A complete updated travel plan as markdown, reflecting the traveler's requested changes.",
             agent=agent)
 
+    def travel_inventory_task(self, agent, origin, destination, start_date, end_date, travelers, notes):
+        return Task(description=dedent(f"""
+            Build a travel inventory recommendation focused on flights and hotels.
+
+            Requirements:
+            - Use Jinko MCP tools to fetch both flight options and hotel options.
+            - For flight searches, always use 3-letter IATA airport codes, not countries or broad regions.
+            - If the requested destination is not an airport city, choose the nearest practical airport for flights and keep the original destination for hotels.
+            - Provide booking links where available.
+            - Summarize trade-offs by price, convenience, and timing/location.
+            - Keep output recommendation-only; user performs final booking.
+
+            Route/Stay Inputs:
+            - Origin: {origin}
+            - Destination: {destination}
+            - Start date: {start_date}
+            - End date: {end_date}
+            - Travelers: {travelers}
+            - Notes: {notes}
+            {self.__tip_section()}
+          """),
+            expected_output="A markdown recommendation containing flights, hotels, and booking links with concise rationale.",
+            agent=agent)
+
+    def refine_travel_inventory_task(self, agent, origin, destination, start_date, end_date, travelers, refinement_request, previous_summary):
+        return Task(description=dedent(f"""
+            Refine existing flights and hotels recommendations from traveler feedback.
+
+            Requirements:
+            - Apply the refinement request to both flight and hotel recommendations.
+            - For flight searches, always use 3-letter IATA airport codes, not countries or broad regions.
+            - If the requested destination is not an airport city, choose the nearest practical airport for flights and keep the original destination for hotels.
+            - Return updated recommendations with booking links.
+            - Explain what changed versus previous recommendations.
+            - Keep output recommendation-only; user performs final booking.
+
+            Inputs:
+            - Origin: {origin}
+            - Destination: {destination}
+            - Start date: {start_date}
+            - End date: {end_date}
+            - Travelers: {travelers}
+            - Previous summary: {previous_summary}
+            - Refinement request: {refinement_request}
+            {self.__tip_section()}
+          """),
+            expected_output="A markdown update of flights/hotels recommendations with booking links and change summary.",
+            agent=agent)
+
     def __tip_section(self):
         return "If you do your BEST WORK, I'll tip you $100 and grant you any wish you want!"

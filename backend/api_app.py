@@ -6,6 +6,7 @@ from typing import Optional, List
 from crewai import Crew, LLM
 from trip_agents import TripAgents
 from trip_tasks import TripTasks
+from tools.jinko_mcp_tools import resolve_flight_endpoint_details
 import os
 from dotenv import load_dotenv
 from functools import lru_cache
@@ -44,7 +45,7 @@ class TripRequest(BaseModel):
         description="Your current location")
     destination: str = Field(..., 
         json_schema_extra={"example": "Krabi, Thailand"},
-        description="Destination city and country")
+        description="City options (comma-separated) or single destination to plan")
     start_date: date = Field(..., 
         json_schema_extra={"example": "2025-06-01"},
         description="Start date of your trip")
@@ -61,6 +62,9 @@ class TripResponse(BaseModel):
     trip_id: Optional[str] = None
     itinerary: Optional[str] = None
     error: Optional[str] = None
+    clarification_field: Optional[str] = None
+    clarification_message: Optional[str] = None
+    clarification_options: List[str] = []
 
 class ChatMessage(BaseModel):
     role: str
@@ -89,12 +93,68 @@ class RefineRequest(BaseModel):
     refinement_request: str = Field(..., description="What changes the traveler wants")
     trip_id: Optional[str] = Field(None, description="Trip ID for persistence")
 
+
+class TravelInventoryRequest(BaseModel):
+    origin: str = Field(..., description="Origin city or airport")
+    destination: str = Field(..., description="Destination city or airport")
+    start_date: date = Field(..., description="Trip start date")
+    end_date: date = Field(..., description="Trip end date")
+    travelers: int = Field(1, ge=1, description="Total travelers")
+    notes: str = Field("", description="Budget or preferences")
+    trip_id: Optional[str] = Field(None, description="Trip ID for persistence")
+
+
+class RefineTravelInventoryRequest(BaseModel):
+    origin: str = Field(..., description="Origin city or airport")
+    destination: str = Field(..., description="Destination city or airport")
+    start_date: date = Field(..., description="Trip start date")
+    end_date: date = Field(..., description="Trip end date")
+    travelers: int = Field(1, ge=1, description="Total travelers")
+    previous_summary: str = Field("", description="Previous recommendation text")
+    refinement_request: str = Field(..., description="Requested changes")
+    trip_id: Optional[str] = Field(None, description="Trip ID for persistence")
+
+
+class TravelInventoryResponse(BaseModel):
+    status: str
+    message: str
+    trip_id: Optional[str] = None
+    recommendation: Optional[str] = None
+    disclaimer: Optional[str] = None
+    source: Optional[str] = None
+    error: Optional[str] = None
+    clarification_field: Optional[str] = None
+    clarification_message: Optional[str] = None
+    clarification_options: List[str] = []
+
+
+def _clarification_response_for_flights(origin: str, destination: str) -> Optional[dict]:
+    checks = [
+        (resolve_flight_endpoint_details(origin, "origin"), origin),
+        (resolve_flight_endpoint_details(destination, "destination"), destination),
+    ]
+    for resolution, raw_value in checks:
+        if resolution.get("needs_clarification"):
+            field_name = str(resolution.get("field", "location"))
+            label = "departure" if field_name == "origin" else "arrival"
+            return {
+                "field": field_name,
+                "message": (
+                    f"Flight search needs a {label} city or 3-letter airport code instead of '{raw_value}'. "
+                    f"Reply with something like 'Indianapolis' or 'IND'."
+                ),
+                "options": [],
+            }
+    return None
+
 class Settings:
     def __init__(self):
         self.OPENAI_API_KEY = _clean_env("OPENAI_API_KEY")
         self.OPENAI_MODEL = _clean_env("OPENAI_MODEL", "gpt-4o-mini")
         self.SERPER_API_KEY = _clean_env("SERPER_API_KEY")
         self.BROWSERLESS_API_KEY = _clean_env("BROWSERLESS_API_KEY")
+        self.JINKO_MCP_SERVER_URL = _clean_env("JINKO_MCP_SERVER_URL", "https://mcp.builders.gojinko.com/mcp")
+        self.JINKO_MCP_OAUTH_BEARER_TOKEN = _clean_env("JINKO_MCP_OAUTH_BEARER_TOKEN")
 
 @lru_cache()
 def get_settings():
@@ -211,6 +271,80 @@ class RefineCrew:
                 detail=str(x),
             )
 
+
+class TravelInventoryCrew:
+    def __init__(self, origin, destination, start_date, end_date, travelers, notes, model_name):
+        self.origin = origin
+        self.destination = destination
+        self.start_date = start_date
+        self.end_date = end_date
+        self.travelers = travelers
+        self.notes = notes
+        self.llm = LLM(model=model_name)
+
+    async def run(self):
+        try:
+            agents = TripAgents(llm=self.llm)
+            tasks = TripTasks()
+            inventory_agent = agents.transport_stay_concierge()
+            inventory_task = tasks.travel_inventory_task(
+                inventory_agent,
+                self.origin,
+                self.destination,
+                self.start_date,
+                self.end_date,
+                self.travelers,
+                self.notes,
+            )
+            crew = Crew(agents=[inventory_agent], tasks=[inventory_task], verbose=True)
+            result = await crew.kickoff_async()
+            return result.raw if hasattr(result, "raw") else str(result)
+        except Exception as x:
+            raise HTTPException(status_code=500, detail=str(x))
+
+
+class RefineTravelInventoryCrew:
+    def __init__(
+        self,
+        origin,
+        destination,
+        start_date,
+        end_date,
+        travelers,
+        previous_summary,
+        refinement_request,
+        model_name,
+    ):
+        self.origin = origin
+        self.destination = destination
+        self.start_date = start_date
+        self.end_date = end_date
+        self.travelers = travelers
+        self.previous_summary = previous_summary
+        self.refinement_request = refinement_request
+        self.llm = LLM(model=model_name)
+
+    async def run(self):
+        try:
+            agents = TripAgents(llm=self.llm)
+            tasks = TripTasks()
+            inventory_agent = agents.transport_stay_concierge()
+            inventory_task = tasks.refine_travel_inventory_task(
+                inventory_agent,
+                self.origin,
+                self.destination,
+                self.start_date,
+                self.end_date,
+                self.travelers,
+                self.refinement_request,
+                self.previous_summary,
+            )
+            crew = Crew(agents=[inventory_agent], tasks=[inventory_task], verbose=True)
+            result = await crew.kickoff_async()
+            return result.raw if hasattr(result, "raw") else str(result)
+        except Exception as x:
+            raise HTTPException(status_code=500, detail=str(x))
+
 @app.on_event("shutdown")
 async def shutdown_db():
     await close_client()
@@ -253,6 +387,38 @@ async def plan_trip(
         if not isinstance(itinerary, str):
             itinerary = str(itinerary)
 
+        clarification = _clarification_response_for_flights(
+            trip_request.origin,
+            trip_request.destination,
+        )
+
+        # Enrich the itinerary with flights/hotels recommendations from Jinko MCP.
+        travel_inventory = None
+        if not clarification:
+            try:
+                inventory_crew = TravelInventoryCrew(
+                    trip_request.origin,
+                    trip_request.destination,
+                    str(trip_request.start_date),
+                    str(trip_request.end_date),
+                    1,
+                    "",  # Budget/preference notes (empty if not specified)
+                    f"openai/{settings.OPENAI_MODEL}",
+                )
+                travel_inventory = await inventory_crew.run()
+                if travel_inventory and not isinstance(travel_inventory, str):
+                    travel_inventory = str(travel_inventory)
+            except Exception:
+                # Keep plan-trip resilient even when remote MCP integration is unavailable.
+                travel_inventory = None
+
+        if travel_inventory:
+            itinerary = (
+                f"{itinerary}\n\n"
+                "## Flights and Hotels\n"
+                f"{travel_inventory}"
+            )
+
         # Save to MongoDB
         now = datetime.now().isoformat()
         trip_doc = {
@@ -262,12 +428,25 @@ async def plan_trip(
             "end_date": str(trip_request.end_date),
             "interests": trip_request.interests,
             "itinerary": itinerary,
+            "travel_inventory": travel_inventory,
+            "travel_inventory_source": "jinko" if travel_inventory else None,
             "refinements": [],
             "created_at": now,
             "updated_at": now,
         }
         result = await get_trips_collection().insert_one(trip_doc)
         trip_id = str(result.inserted_id)
+
+        if clarification:
+            return TripResponse(
+                status="needs_clarification",
+                message="Trip plan generated, but flight search needs more specific route details.",
+                trip_id=trip_id,
+                itinerary=itinerary,
+                clarification_field=clarification["field"],
+                clarification_message=clarification["message"],
+                clarification_options=clarification["options"],
+            )
 
         return TripResponse(
             status="success",
@@ -388,6 +567,143 @@ async def health_check():
         "status": "healthy",
         "timestamp": datetime.now().isoformat()
     }
+
+
+@app.post("/api/v1/search-travel-inventory", response_model=TravelInventoryResponse)
+async def search_travel_inventory(
+    request: TravelInventoryRequest,
+    settings: Settings = Depends(get_settings),
+):
+    if request.end_date <= request.start_date:
+        raise HTTPException(status_code=400, detail="End date must be after start date")
+    if not settings.OPENAI_API_KEY:
+        raise HTTPException(status_code=500, detail="Missing required API key: OPENAI_API_KEY")
+
+    try:
+        clarification = _clarification_response_for_flights(request.origin, request.destination)
+        if clarification:
+            return TravelInventoryResponse(
+                status="needs_clarification",
+                message="Travel inventory needs more specific route details.",
+                trip_id=request.trip_id,
+                clarification_field=clarification["field"],
+                clarification_message=clarification["message"],
+                clarification_options=clarification["options"],
+            )
+
+        crew = TravelInventoryCrew(
+            request.origin,
+            request.destination,
+            str(request.start_date),
+            str(request.end_date),
+            request.travelers,
+            request.notes,
+            f"openai/{settings.OPENAI_MODEL}",
+        )
+        recommendation = await crew.run()
+        recommendation = recommendation if isinstance(recommendation, str) else str(recommendation)
+        disclaimer = "Recommendations include booking links for user handoff only. Autonomous booking is disabled."
+
+        if request.trip_id:
+            now = datetime.now().isoformat()
+            await get_trips_collection().update_one(
+                {"_id": ObjectId(request.trip_id)},
+                {
+                    "$set": {
+                        "travel_inventory": recommendation,
+                        "travel_inventory_source": "jinko",
+                        "updated_at": now,
+                    }
+                },
+            )
+        
+        return TravelInventoryResponse(
+            status="success",
+            message="Travel inventory generated successfully",
+            trip_id=request.trip_id,
+            recommendation=recommendation,
+            disclaimer=disclaimer,
+            source="jinko",
+        )
+    except Exception as e:
+        return TravelInventoryResponse(
+            status="error",
+            message="Failed to generate travel inventory",
+            trip_id=request.trip_id,
+            error=str(e),
+        )
+
+
+@app.post("/api/v1/refine-travel-inventory", response_model=TravelInventoryResponse)
+async def refine_travel_inventory(
+    request: RefineTravelInventoryRequest,
+    settings: Settings = Depends(get_settings),
+):
+    if request.end_date <= request.start_date:
+        raise HTTPException(status_code=400, detail="End date must be after start date")
+    if not settings.OPENAI_API_KEY:
+        raise HTTPException(status_code=500, detail="Missing required API key: OPENAI_API_KEY")
+
+    try:
+        clarification = _clarification_response_for_flights(request.origin, request.destination)
+        if clarification:
+            return TravelInventoryResponse(
+                status="needs_clarification",
+                message="Travel inventory refinement needs more specific route details.",
+                trip_id=request.trip_id,
+                clarification_field=clarification["field"],
+                clarification_message=clarification["message"],
+                clarification_options=clarification["options"],
+            )
+
+        crew = RefineTravelInventoryCrew(
+            request.origin,
+            request.destination,
+            str(request.start_date),
+            str(request.end_date),
+            request.travelers,
+            request.previous_summary,
+            request.refinement_request,
+            f"openai/{settings.OPENAI_MODEL}",
+        )
+        recommendation = await crew.run()
+        recommendation = recommendation if isinstance(recommendation, str) else str(recommendation)
+        disclaimer = "Recommendations include booking links for user handoff only. Autonomous booking is disabled."
+
+        if request.trip_id:
+            now = datetime.now().isoformat()
+            await get_trips_collection().update_one(
+                {"_id": ObjectId(request.trip_id)},
+                {
+                    "$set": {
+                        "travel_inventory": recommendation,
+                        "travel_inventory_source": "jinko",
+                        "updated_at": now,
+                    },
+                    "$push": {
+                        "travel_inventory_refinements": {
+                            "request": request.refinement_request,
+                            "timestamp": now,
+                        }
+                    },
+                },
+            )
+
+        return TravelInventoryResponse(
+            status="success",
+            message="Travel inventory refined successfully",
+            trip_id=request.trip_id,
+            recommendation=recommendation,
+            disclaimer=disclaimer,
+            source="jinko",
+        )
+    except Exception as e:
+        return TravelInventoryResponse(
+            status="error",
+            message="Failed to refine travel inventory",
+            trip_id=request.trip_id,
+            error=str(e),
+        )
 
 if __name__ == "__main__":
     import uvicorn

@@ -16,6 +16,24 @@ import { Toaster } from "./components/ui/sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}api`;
+const INVENTORY_HEADING = "## Flights and Hotels (Jinko MCP)";
+
+const upsertTravelInventorySection = (currentItinerary, recommendation) => {
+  const trimmedItinerary = (currentItinerary || "").trimEnd();
+  const trimmedRecommendation = (recommendation || "").trim();
+
+  if (!trimmedRecommendation) return trimmedItinerary;
+
+  const section = `${INVENTORY_HEADING}\n${trimmedRecommendation}`;
+  const headingIndex = trimmedItinerary.indexOf(INVENTORY_HEADING);
+
+  if (headingIndex === -1) {
+    return trimmedItinerary ? `${trimmedItinerary}\n\n${section}` : section;
+  }
+
+  const before = trimmedItinerary.slice(0, headingIndex).trimEnd();
+  return before ? `${before}\n\n${section}` : section;
+};
 
 const App = () => {
   const [status, setStatus] = useState("idle"); // idle | loading | success | error
@@ -26,6 +44,7 @@ const App = () => {
   const [chatMessages, setChatMessages] = useState([]);
   const [isRefining, setIsRefining] = useState(false);
   const [tripId, setTripId] = useState(null);
+  const [clarification, setClarification] = useState(null);
 
   const plannerRef = useRef(null);
   const resultsRef = useRef(null);
@@ -50,6 +69,7 @@ const App = () => {
     setItinerary("");
     setChatMessages([]);
     setTripId(null);
+    setClarification(null);
     window.history.replaceState(null, "", window.location.pathname);
     setTimeout(() => scrollTo("planner"), 80);
   };
@@ -60,11 +80,13 @@ const App = () => {
     setItinerary("");
     setChatMessages([]);
     setTripId(null);
+    setClarification(null);
     setMeta({
       origin: payload.origin,
       destination: payload.destination,
       start_date: payload.start_date,
       end_date: payload.end_date,
+      interests: payload.interests,
     });
     setTimeout(() => scrollTo("results"), 100);
     try {
@@ -74,9 +96,24 @@ const App = () => {
       const data = res.data;
       // simulate elegant minimum compose duration
       await new Promise((r) => setTimeout(r, 1400));
-      if (data.status === "success" && data.itinerary) {
+      if ((data.status === "success" || data.status === "needs_clarification") && data.itinerary) {
         setItinerary(data.itinerary);
         setStatus("success");
+        if (data.status === "needs_clarification" && data.clarification_message) {
+          setClarification({
+            field: data.clarification_field || null,
+            message: data.clarification_message,
+            options: data.clarification_options || [],
+          });
+          setChatMessages([
+            {
+              role: "assistant",
+              content: data.clarification_message,
+            },
+          ]);
+        } else {
+          setClarification(null);
+        }
         if (data.trip_id) {
           setTripId(data.trip_id);
           window.history.replaceState(null, "", `#/trip/${data.trip_id}`);
@@ -102,6 +139,67 @@ const App = () => {
     setIsRefining(true);
     setChatMessages((prev) => [...prev, { role: "user", content: message }]);
     try {
+      if (clarification?.field) {
+        const nextPayload = {
+          origin: clarification.field === "origin" ? message : meta.origin,
+          destination: clarification.field === "destination" ? message : meta.destination,
+          start_date: meta.start_date,
+          end_date: meta.end_date,
+          travelers: 1,
+          notes: "",
+          trip_id: tripId || undefined,
+        };
+        const res = await axios.post(`${API}/v1/search-travel-inventory`, nextPayload, {
+          headers: { "Content-Type": "application/json" },
+        });
+        const data = res.data;
+        if (data.status === "success" && data.recommendation) {
+          setItinerary((prev) => upsertTravelInventorySection(prev, data.recommendation));
+          setMeta((prev) => ({
+            ...(prev || {}),
+            origin: nextPayload.origin,
+            destination: nextPayload.destination,
+          }));
+          if (data.trip_id) {
+            setTripId(data.trip_id);
+            window.history.replaceState(null, "", `#/trip/${data.trip_id}`);
+          }
+          setClarification(null);
+          setChatMessages((prev) => [
+            ...prev,
+            { role: "assistant", content: "Flight search is now using your updated route details." },
+          ]);
+        } else if (data.status === "needs_clarification" && data.clarification_message) {
+          setMeta((prev) => ({
+            ...(prev || {}),
+            origin: nextPayload.origin,
+            destination: nextPayload.destination,
+          }));
+          if (data.trip_id) {
+            setTripId(data.trip_id);
+            window.history.replaceState(null, "", `#/trip/${data.trip_id}`);
+          }
+          setClarification({
+            field: data.clarification_field || null,
+            message: data.clarification_message,
+            options: data.clarification_options || [],
+          });
+          setChatMessages((prev) => [
+            ...prev,
+            { role: "assistant", content: data.clarification_message },
+          ]);
+        } else {
+          setChatMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: `Could not update the route details: ${data.error || data.message || "Unknown error"}`,
+            },
+          ]);
+        }
+        return;
+      }
+
       const res = await axios.post(
         `${API}/v1/refine-trip`,
         {
@@ -168,6 +266,7 @@ const App = () => {
           interests: t.interests,
         });
         setChatMessages(t.refinements || []);
+        setClarification(null);
         setStatus("success");
         setTimeout(() => scrollTo("results"), 200);
       } catch {
@@ -221,9 +320,11 @@ const App = () => {
                 setMeta(null);
                 setChatMessages([]);
                 setTripId(null);
+                setClarification(null);
                 window.history.replaceState(null, "", window.location.pathname);
                 scrollTo("planner");
               }}
+              clarification={clarification}
             />
           ) : null}
           {status === "error" ? (

@@ -5,6 +5,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from crewai import LLM
 from tools.browser_tools import BrowserTools
 from tools.calculator_tools import CalculatorTools
+from tools.jinko_mcp_tools import JinkoTravelRefineTool, JinkoTravelSearchTool
 from tools.search_tools import SearchTools
 import os
 from dotenv import load_dotenv
@@ -23,6 +24,8 @@ class TripAgents():
         self.search_tool = SearchTools()
         self.browser_tool = BrowserTools()
         self.calculator_tool = CalculatorTools()
+        self.jinko_search_tool = JinkoTravelSearchTool()
+        self.jinko_refine_tool = JinkoTravelRefineTool()
 
     def city_selection_agent(self):
         return Agent(
@@ -58,6 +61,17 @@ class TripAgents():
             allow_delegation=False,
             llm=self.llm,
             verbose=True
+        )
+
+    def transport_stay_concierge(self):
+        return Agent(
+            role='Flights and Hotels Concierge',
+            goal='Find and refine high-quality flight and hotel recommendations with booking links',
+            backstory='Specialist in travel inventory curation across transport and accommodation options',
+            tools=[self.jinko_search_tool, self.jinko_refine_tool, self.calculator_tool],
+            allow_delegation=False,
+            llm=self.llm,
+            verbose=True,
         )
 
 ###########################################################################################
