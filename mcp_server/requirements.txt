@@ -1,0 +1,5 @@
+mcp[cli]>=1.28.0
+httpx
+python-dotenv
+unstructured
+pyjwt[crypto]
