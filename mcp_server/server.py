@@ -14,7 +14,7 @@ MCP_ENV_PATH = os.getenv("MCP_ENV_FILE", os.path.join(MCP_SERVER_DIR, ".env"))
 
 load_dotenv(MCP_ENV_PATH)
 
-BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
 SERPER_API_KEY = os.getenv("SERPER_API_KEY", "")
 BROWSERLESS_API_KEY = os.getenv("BROWSERLESS_API_KEY", "")
 
