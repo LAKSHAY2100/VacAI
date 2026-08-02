@@ -1,8 +1,16 @@
+import logging
 import os
 
 import jwt
 from jwt import PyJWKClient
 from mcp.server.auth.provider import AccessToken, TokenVerifier
+
+logger = logging.getLogger(__name__)
+
+# Small tolerance for clock skew between this server and Auth0, otherwise
+# exp/iat/nbf checks can hard-fail even a second or two off. Same issue
+# documented in auth0-test/auth.py's jwt.decode patch.
+_CLOCK_LEEWAY_SECONDS = 10
 
 
 class Auth0TokenVerifier(TokenVerifier):
@@ -23,8 +31,10 @@ class Auth0TokenVerifier(TokenVerifier):
                 algorithms=["RS256"],
                 audience=self.audience,
                 issuer=self.issuer,
+                leeway=_CLOCK_LEEWAY_SECONDS,
             )
         except jwt.PyJWTError:
+            logger.warning("Token verification failed", exc_info=True)
             return None
 
         return AccessToken(
